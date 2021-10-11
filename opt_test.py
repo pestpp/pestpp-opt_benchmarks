@@ -189,7 +189,7 @@ def run_dewater_test():
     print(averse_obj_funcs) 
 
     pst.pestpp_options["opt_recalc_chance_every"] = 1
-    pst.control_data.noptmax = 10
+    pst.control_data.noptmax = 4
     pst.write(os.path.join(worker_d,"template","test.pst"))
     pyemu.os_utils.start_workers(os.path.join(worker_d, "template"), exe_path, "test.pst",
                                 master_dir=os.path.join(worker_d, "master5"), worker_root=worker_d, num_workers=10,
@@ -205,32 +205,33 @@ def run_dewater_test():
     print(averse_obj_funcs) 
 
 
-    
-
-
 
 def run_supply2_test():
     worker_d = os.path.join("opt_supply2_chance")
-    pyemu.os_utils.start_workers(os.path.join(worker_d, "template"), exe_path, "supply2_pest.base.pst",
-                                master_dir=os.path.join(worker_d, "master"), worker_root=worker_d, num_workers=10,
+    pst = pyemu.Pst(os.path.join(worker_d,"template","supply2_pest.base.pst"))
+    pst.pestpp_options["panther_agent_freeze_on_fail"] = True
+    pst.control_data.noptmax = 1
+    pst.write(os.path.join(worker_d,"template","test.pst"))
+    pyemu.os_utils.start_workers(os.path.join(worker_d, "template"), exe_path, "test.pst",
+                                master_dir=os.path.join(worker_d, "master1"), worker_root=worker_d, num_workers=10,
                                 verbose=True,port=4200)
 
     opt = None
-    with open(os.path.join(worker_d, "master", "supply2_pest.base.rec"), 'r') as f:
+    with open(os.path.join(worker_d, "master1", "test.rec"), 'r') as f:
         for line in f:
             if "iteration 1 objective function value:" in line:
                 opt = float(line.strip().split()[-2])
     assert opt is not None
 
     pst = pyemu.Pst(os.path.join(worker_d,"template","supply2_pest.base.pst"))
-    pst.control_data.noptmax = 10
+    pst.control_data.noptmax = 4
     pst.pestpp_options["opt_iter_tol"] = 1.0e-10
     pst.write(os.path.join(worker_d,"template","test.pst"))
     pyemu.os_utils.start_workers(os.path.join(worker_d, "template"), exe_path, "test.pst",
-                                master_dir=os.path.join(worker_d, "master"), worker_root=worker_d, num_workers=10,
+                                master_dir=os.path.join(worker_d, "master2"), worker_root=worker_d, num_workers=10,
                                 verbose=True,port=4200)
     
-    with open(os.path.join(worker_d,"master","test.rec")) as f:
+    with open(os.path.join(worker_d,"master2","test.rec")) as f:
         for line in f:
             if "iteration       obj func" in line:
                 f.readline() # skip the initial obj func
@@ -451,9 +452,9 @@ if __name__ == "__main__":
     #fosm_invest()
     #startworker()
     #run_dewater_test()
-    #run_supply2_test()
+    run_supply2_test()
     #est_res_test()
     #shutil.copy2(os.path.join("..","exe","windows","x64","Debug","pestpp-opt.exe"),os.path.join("..","bin","win","pestpp-opt.exe"))
     #stack_test()
-    dewater_restart_test()
+    #dewater_restart_test()
     #std_weights_test()
