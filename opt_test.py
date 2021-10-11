@@ -224,7 +224,7 @@ def run_supply2_test():
     assert opt is not None
 
     pst = pyemu.Pst(os.path.join(worker_d,"template","supply2_pest.base.pst"))
-    pst.control_data.noptmax = 4
+    pst.control_data.noptmax = 1
     pst.pestpp_options["opt_iter_tol"] = 1.0e-10
     pst.write(os.path.join(worker_d,"template","test.pst"))
     pyemu.os_utils.start_workers(os.path.join(worker_d, "template"), exe_path, "test.pst",
