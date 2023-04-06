@@ -54,7 +54,7 @@ def std_weights_test():
     sc = pyemu.Schur(jco=jco, pst=pst, forecasts=forecast_names)
     # print(sc.get_forecast_summary())
 
-    fstd = sc.get_forecast_summary().loc[:, "post_var"].apply(np.sqrt)
+    fstd = sc.get_forecast_summary().loc[:, "post_var"].apply(lambda x: np.sqrt(x))
     pr_unc_py = fstd.to_dict()
     pst.observation_data.loc[fstd.index, "weight"] = fstd.values
 
@@ -283,7 +283,7 @@ def est_res_test():
     shutil.copytree(t_d,m_d)
     pyemu.os_utils.run("{0} pest_est_res.pst".format(exe_path),cwd=m_d)
     res_est2 = pyemu.pst_utils.read_resfile(os.path.join(m_d,"pest_est_res.1.est+chance.rei"))
-    diff = (res_est1.modelled - res_est2.modelled).apply(np.abs)
+    diff = (res_est1.modelled - res_est2.modelled).apply(lambda x: np.abs(x))
     print(diff.sum())
     assert diff.sum() < 1.0e-10
 
@@ -441,7 +441,7 @@ def fosm_invest():
         jcb = jcb.get(pst.obs_names,adj_pars)
         print(jcb.shape)
         sc = pyemu.Schur(jco=jcb,pst=pst,predictions=fnames)
-        print(jcb_file,sc.get_forecast_summary().loc[:,"prior_var"].apply(np.sqrt))
+        print(jcb_file,sc.get_forecast_summary().loc[:,"prior_var"].apply(lambda x: np.sqrt(x)))
 
 
 
