@@ -1849,7 +1849,7 @@ WEL_0000.dat.tpl WEL_0000.dat
 transmissivity_layer_1.ref.tpl transmissivity_layer_1.ref
 strt_layer_1.ref.tpl strt_layer_1.ref
 dewater_pest.hds.ins dewater_pest.hds
-wel_0000.dat.ins wel_0000.dat
+WEL_0000.dat.ins wel_0000.dat
 ++opt_constraint_groups(l_const)
 ++opt_dec_var_groups(q)
 ++opt_risk(0.5)
