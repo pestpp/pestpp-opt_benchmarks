@@ -1,8 +1,8 @@
 pcf
 * control data
              restart          estimation
-       609       600         4         0         7         0
-         3         1              single               point         1         0         0          noobsreref
+       609       607         4         0         7         0
+         3         2              single               point         1         0         0          noobsreref
    2.000000E+01  -3.000000E+00   3.000000E-01   1.000000E-02        -7       999          lamforgive        noderforgive
    1.000000E+01   1.000000E+01   1.000000E-03         0         0
    1.000000E-01         1   1.100000E+00               noaui          nosenreuse        noboundscale
@@ -1236,6 +1236,13 @@ h19_26                5.0000000000E+01      0.0000000000E+00       l_3
 h19_27                5.0000000000E+01      0.0000000000E+00       junk               
 h19_28                5.0000000000E+01      0.0000000000E+00       greater_than_1               
 h19_29                5.0000000000E+01      0.0000000000E+00       greater
+q1                    0.0000000000E+00      0.0000000000E+00      obgnme               
+q2                    0.0000000000E+00      0.0000000000E+00      obgnme               
+q3                    0.0000000000E+00      0.0000000000E+00      obgnme               
+q4                    0.0000000000E+00      0.0000000000E+00      obgnme               
+q5                    0.0000000000E+00      0.0000000000E+00      obgnme               
+q6                    0.0000000000E+00      0.0000000000E+00      obgnme               
+q7                    0.0000000000E+00      0.0000000000E+00      obgnme 
 * model command line
 mfnwt dewater_pest.nam
 * model input/output
@@ -1243,6 +1250,7 @@ WEL_0000.dat.tpl WEL_0000.dat
 transmissivity_layer_1.ref.tpl transmissivity_layer_1.ref
 strt_layer_1.ref.tpl strt_layer_1.ref
 dewater_pest.hds.ins dewater_pest.hds
+wel_0000.dat.ins wel_0000.dat
 ++opt_constraint_groups(l_const)
 ++forecasts(h05_12,h05_14,h05_16,h07_12,h07_16,h09_12,h09_14,h10_15,h13_15,h13_16)
 ++opt_risk(0.95)

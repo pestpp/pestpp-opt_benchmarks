@@ -147,21 +147,31 @@ def run_dewater_test():
     print(obj_funcs)
     assert np.abs(obj_funcs.max() - obj_funcs.min()) < 0.1
 
+    ws = os.path.join(worker_d,"tied_serial_master")
+    if os.path.exists(ws):
+        shutil.rmtree(ws)
+    shutil.copytree(os.path.join(worker_d,"template"),ws)
+
+
     pst.pestpp_options["opt_risk"] = 0.95
     pst.pestpp_options.pop("base_jacobian",None)
     par = pst.parameter_data
+    dv_pars = par.loc[par.pargp=="q","parnme"]
     adj_pars = par.loc[par.pargp=="h","parnme"]
     pst.parameter_data.loc[adj_pars[0],"partrans"] = "log"
     pst.parameter_data.loc[adj_pars[1:],"partrans"] = "tied"
     pst.parameter_data.loc[adj_pars[1:],"partied"] = adj_pars[0]
+
     pst.parameter_data.loc[["up_grad","dn_grad"],"partrans"] = "log"
     pst.pestpp_options["opt_recalc_chance_every"] = 100
     pst.control_data.noptmax = 3
-    pst.write(os.path.join(worker_d,"template","test.pst"))
-    pyemu.os_utils.start_workers(os.path.join(worker_d, "template"), exe_path, "test.pst",
-                                master_dir=os.path.join(worker_d, "master3"), worker_root=worker_d, num_workers=10,
-                                verbose=True,port=4200)
-    with open(os.path.join(worker_d,"master3","test.rec")) as f:
+    pst.write(os.path.join(ws,"test.pst"))
+    #pyemu.os_utils.start_workers(os.path.join(worker_d, "template"), exe_path, "test.pst",
+    #                            master_dir=os.path.join(worker_d, "master3"), worker_root=worker_d, num_workers=10,
+    #                            verbose=True,port=4200)
+    pyemu.os_utils.run("{0} {1}".format(exe_path,"test.pst"),cwd=ws)
+    #with open(os.path.join(worker_d,"master3","test.rec")) as f:
+    with open(os.path.join(ws,"test.rec")) as f:
         for line in f:
             if "iteration       obj func" in line:
                 f.readline() # skip the initial obj func
@@ -171,7 +181,52 @@ def run_dewater_test():
     averse_obj_funcs = np.array([float(line.strip().split()[-1]) for line in lines])
     print(averse_obj_funcs) 
     assert np.abs(averse_obj_funcs.max() - averse_obj_funcs.min()) < 0.1
+   
 
+    ws = os.path.join(worker_d,"tied_serial_master2")
+    if os.path.exists(ws):
+        shutil.rmtree(ws)
+    shutil.copytree(os.path.join(worker_d,"template"),ws)
+    pst.parameter_data.loc[adj_pars,"partrans"] = "log"
+    #pst.drop_parameters(os.path.join(ws,"transmissivity_layer_1.ref.tpl"),pst_path='.')
+    #pst.drop_parameters(os.path.join(ws,"strt_layer_1.ref.tpl"),pst_path='.')
+
+
+    pst.pestpp_options["opt_risk"] = 0.95
+    pst.pestpp_options.pop("base_jacobian",None)
+    par = pst.parameter_data
+    dv_pars = par.loc[par.pargp=="q","parnme"]
+    adj_pars = par.loc[par.pargp=="h","parnme"]
+    pst.parameter_data.loc[adj_pars[0],"partrans"] = "log"
+    pst.parameter_data.loc[adj_pars[1:],"partrans"] = "tied"
+    pst.parameter_data.loc[adj_pars[1:],"partied"] = adj_pars[0]
+
+    pst.parameter_data.loc[dv_pars[1:],"partrans"] = "tied"
+    pst.parameter_data.loc[dv_pars[1:],"partied"] = dv_pars[0]
+    pst.pestpp_options["opt_risk"] = 0.5
+    #pst.parameter_data.loc[dv_pars[1:],"pargp"] = "qtied"
+    
+    #pst.write(os.path.join(ws,"test.pst"))
+
+    pst.parameter_data.loc[["up_grad","dn_grad"],"partrans"] = "log"
+    pst.pestpp_options["opt_recalc_chance_every"] = 100
+    pst.control_data.noptmax = 3
+    pst.write(os.path.join(ws,"test.pst"))
+   
+    pyemu.os_utils.run("{0} {1}".format(exe_path,"test.pst"),cwd=ws)
+    #with open(os.path.join(worker_d,"master3","test.rec")) as f:
+    with open(os.path.join(ws,"test.rec")) as f:
+        for line in f:
+            if "iteration       obj func" in line:
+                f.readline() # skip the initial obj func
+                lines = []
+                for _ in range(pst.control_data.noptmax):
+                    lines.append(f.readline())
+    averse_obj_funcs = np.array([float(line.strip().split()[-1]) for line in lines])
+    print(averse_obj_funcs) 
+    assert np.abs(averse_obj_funcs.max() - averse_obj_funcs.min()) < 0.1   
+   
+    pst.parameter_data.loc[dv_pars,"partrans"] = "none"
     pst.pestpp_options["opt_recalc_chance_every"] = 2
     pst.control_data.noptmax = 10
     pst.write(os.path.join(worker_d,"template","test.pst"))
@@ -184,9 +239,13 @@ def run_dewater_test():
                 f.readline() # skip the initial obj func
                 lines = []
                 for _ in range(pst.control_data.noptmax):
-                    lines.append(f.readline())
+                    line = f.readline()
+                    if line.strip().startswith("---"):
+                        break
+                    lines.append(line)
     averse_obj_funcs = np.array([float(line.strip().split()[-1]) for line in lines])
     print(averse_obj_funcs) 
+    assert len(averse_obj_funcs) > 2
 
     pst.pestpp_options["opt_recalc_chance_every"] = 1
     pst.control_data.noptmax = 4
@@ -200,9 +259,14 @@ def run_dewater_test():
                 f.readline() # skip the initial obj func
                 lines = []
                 for _ in range(pst.control_data.noptmax):
-                    lines.append(f.readline())
+                    line = f.readline()
+                    if line.strip().startswith("---"):
+                        break
+                    lines.append(line)
     averse_obj_funcs = np.array([float(line.strip().split()[-1]) for line in lines])
     print(averse_obj_funcs) 
+    assert len(averse_obj_funcs) > 2
+    assert np.abs(averse_obj_funcs.max() - averse_obj_funcs.min()) < 0.1 
 
 
 
@@ -451,8 +515,8 @@ def fosm_invest():
 if __name__ == "__main__":
     #fosm_invest()
     #startworker()
-    #run_dewater_test()
-    run_supply2_test()
+    run_dewater_test()
+    #run_supply2_test()
     #est_res_test()
     #shutil.copy2(os.path.join("..","exe","windows","x64","Debug","pestpp-opt.exe"),os.path.join("..","bin","win","pestpp-opt.exe"))
     #stack_test()
