@@ -515,10 +515,10 @@ def fosm_invest():
 if __name__ == "__main__":
     #fosm_invest()
     #startworker()
-    run_dewater_test()
+    #run_dewater_test()
     #run_supply2_test()
     #est_res_test()
     #shutil.copy2(os.path.join("..","exe","windows","x64","Debug","pestpp-opt.exe"),os.path.join("..","bin","win","pestpp-opt.exe"))
     #stack_test()
     #dewater_restart_test()
-    #std_weights_test()
+    std_weights_test()
