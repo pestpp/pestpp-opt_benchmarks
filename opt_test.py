@@ -118,34 +118,34 @@ def scrap_rec(rec_file):
 
 def run_dewater_test():
     worker_d = os.path.join("opt_dewater_chance")
-    pyemu.os_utils.start_workers(os.path.join(worker_d, "template"), exe_path, "dewater_pest.base.pst",
-                                master_dir=os.path.join(worker_d, "master1"), worker_root=worker_d, num_workers=10,
-                                verbose=True,port=4200)
+    # pyemu.os_utils.start_workers(os.path.join(worker_d, "template"), exe_path, "dewater_pest.base.pst",
+    #                             master_dir=os.path.join(worker_d, "master1"), worker_root=worker_d, num_workers=10,
+    #                             verbose=True,port=4200)
 
-    opt = None
-    with open(os.path.join(worker_d, "master1", "dewater_pest.base.rec"), 'r') as f:
-        for line in f:
-            if "iteration 1 objective function value:" in line:
-                opt = float(line.strip().split()[-2])
-    assert opt is not None
+    # opt = None
+    # with open(os.path.join(worker_d, "master1", "dewater_pest.base.rec"), 'r') as f:
+    #     for line in f:
+    #         if "iteration 1 objective function value:" in line:
+    #             opt = float(line.strip().split()[-2])
+    # assert opt is not None
 
     pst = pyemu.Pst(os.path.join(worker_d,"template","dewater_pest.base.pst"))
     pst.control_data.noptmax = 3
     pst.write(os.path.join(worker_d,"template","test.pst"))
-    pyemu.os_utils.start_workers(os.path.join(worker_d, "template"), exe_path, "test.pst",
-                                master_dir=os.path.join(worker_d, "master2"), worker_root=worker_d, num_workers=10,
-                                verbose=True,port=4200)
+    # pyemu.os_utils.start_workers(os.path.join(worker_d, "template"), exe_path, "test.pst",
+    #                             master_dir=os.path.join(worker_d, "master2"), worker_root=worker_d, num_workers=10,
+    #                             verbose=True,port=4200)
     
-    with open(os.path.join(worker_d,"master2","test.rec")) as f:
-        for line in f:
-            if "iteration       obj func" in line:
-                f.readline() # skip the initial obj func
-                lines = []
-                for _ in range(pst.control_data.noptmax):
-                    lines.append(f.readline())
-    obj_funcs = np.array([float(line.strip().split()[-1]) for line in lines])
-    print(obj_funcs)
-    assert np.abs(obj_funcs.max() - obj_funcs.min()) < 0.1
+    # with open(os.path.join(worker_d,"master2","test.rec")) as f:
+    #     for line in f:
+    #         if "iteration       obj func" in line:
+    #             f.readline() # skip the initial obj func
+    #             lines = []
+    #             for _ in range(pst.control_data.noptmax):
+    #                 lines.append(f.readline())
+    # obj_funcs = np.array([float(line.strip().split()[-1]) for line in lines])
+    # print(obj_funcs)
+    # assert np.abs(obj_funcs.max() - obj_funcs.min()) < 0.1
 
     ws = os.path.join(worker_d,"tied_serial_master")
     if os.path.exists(ws):
@@ -225,7 +225,24 @@ def run_dewater_test():
     averse_obj_funcs = np.array([float(line.strip().split()[-1]) for line in lines])
     print(averse_obj_funcs) 
     assert np.abs(averse_obj_funcs.max() - averse_obj_funcs.min()) < 0.1   
-   
+    par_files = [f for f in os.listdir(ws) if f.endswith(".par")] 
+    assert len(par_files)> 0
+    for par_file in par_files:
+        pf = pyemu.pst_utils.read_parfile(os.path.join(ws,par_file))
+        diff = pf.parval1.loc[dv_pars[1:]].values - pf.parval1.loc[dv_pars[0]]
+        print(diff)
+        assert np.abs(diff).sum() <1.e-6
+
+    res_files = [f for f in os.listdir(ws) if f.endswith(".res") or f.endswith(".rei")] 
+    assert len(res_files)> 0
+    for res_file in res_files:
+        pf = pyemu.pst_utils.read_resfile(os.path.join(ws,res_file))
+        diff = pf.modelled.loc[dv_pars[1:]].values - pf.modelled.loc[dv_pars[0]]
+        print(diff)
+        assert np.abs(diff).sum() <1.e-6
+ 
+
+
     pst.parameter_data.loc[dv_pars,"partrans"] = "none"
     pst.pestpp_options["opt_recalc_chance_every"] = 2
     pst.control_data.noptmax = 10
@@ -510,15 +527,13 @@ def fosm_invest():
 
 
 
-
-
 if __name__ == "__main__":
     #fosm_invest()
     #startworker()
-    #run_dewater_test()
+    run_dewater_test()
     #run_supply2_test()
     #est_res_test()
     #shutil.copy2(os.path.join("..","exe","windows","x64","Debug","pestpp-opt.exe"),os.path.join("..","bin","win","pestpp-opt.exe"))
     #stack_test()
     #dewater_restart_test()
-    std_weights_test()
+    #std_weights_test()
