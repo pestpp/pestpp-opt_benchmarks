@@ -118,34 +118,97 @@ def scrap_rec(rec_file):
 
 def run_dewater_test():
     worker_d = os.path.join("opt_dewater_chance")
-    # pyemu.os_utils.start_workers(os.path.join(worker_d, "template"), exe_path, "dewater_pest.base.pst",
-    #                             master_dir=os.path.join(worker_d, "master1"), worker_root=worker_d, num_workers=10,
-    #                             verbose=True,port=4200)
+    pyemu.os_utils.start_workers(os.path.join(worker_d, "template"), exe_path, "dewater_pest.base.pst",
+                                master_dir=os.path.join(worker_d, "master1"), worker_root=worker_d, num_workers=10,
+                                verbose=True,port=4200)
 
-    # opt = None
-    # with open(os.path.join(worker_d, "master1", "dewater_pest.base.rec"), 'r') as f:
-    #     for line in f:
-    #         if "iteration 1 objective function value:" in line:
-    #             opt = float(line.strip().split()[-2])
-    # assert opt is not None
+    opt = None
+    with open(os.path.join(worker_d, "master1", "dewater_pest.base.rec"), 'r') as f:
+        for line in f:
+            if "iteration 1 objective function value:" in line:
+                opt = float(line.strip().split()[-2])
+    assert opt is not None
 
     pst = pyemu.Pst(os.path.join(worker_d,"template","dewater_pest.base.pst"))
     pst.control_data.noptmax = 3
     pst.write(os.path.join(worker_d,"template","test.pst"))
-    # pyemu.os_utils.start_workers(os.path.join(worker_d, "template"), exe_path, "test.pst",
-    #                             master_dir=os.path.join(worker_d, "master2"), worker_root=worker_d, num_workers=10,
-    #                             verbose=True,port=4200)
+    pyemu.os_utils.start_workers(os.path.join(worker_d, "template"), exe_path, "test.pst",
+                                master_dir=os.path.join(worker_d, "master2"), worker_root=worker_d, num_workers=10,
+                                verbose=True,port=4200)
     
-    # with open(os.path.join(worker_d,"master2","test.rec")) as f:
-    #     for line in f:
-    #         if "iteration       obj func" in line:
-    #             f.readline() # skip the initial obj func
-    #             lines = []
-    #             for _ in range(pst.control_data.noptmax):
-    #                 lines.append(f.readline())
-    # obj_funcs = np.array([float(line.strip().split()[-1]) for line in lines])
-    # print(obj_funcs)
-    # assert np.abs(obj_funcs.max() - obj_funcs.min()) < 0.1
+    with open(os.path.join(worker_d,"master2","test.rec")) as f:
+        for line in f:
+            if "iteration       obj func" in line:
+                f.readline() # skip the initial obj func
+                lines = []
+                for _ in range(pst.control_data.noptmax):
+                    lines.append(f.readline())
+    obj_funcs = np.array([float(line.strip().split()[-1]) for line in lines])
+    print(obj_funcs)
+    assert np.abs(obj_funcs.max() - obj_funcs.min()) < 0.1
+
+    ws = os.path.join(worker_d,"ext_objfunc_master")
+    if os.path.exists(ws):
+        shutil.rmtree(ws)
+    shutil.copytree(os.path.join(worker_d,"template"),ws)
+    pst.pestpp_options.pop("base_jacobian",None)
+    par = pst.parameter_data
+    dv_pars = par.loc[par.pargp=="q","parnme"]
+    with open(os.path.join(ws,"ext_OBJ_func.csv"),'w') as f:
+        for dv_par in dv_pars:
+            f.write("{0},1\n".format(dv_par))
+    pst.pestpp_options["opt_objective_function"] = "ext_OBJ_func.csv"
+    pst.control_data.noptmax = 3
+    pst.write(os.path.join(ws,"test.pst"))
+    #pyemu.os_utils.start_workers(os.path.join(worker_d, "template"), exe_path, "test.pst",
+    #                            master_dir=os.path.join(worker_d, "master3"), worker_root=worker_d, num_workers=10,
+    #                            verbose=True,port=4200)
+    pyemu.os_utils.run("{0} {1}".format(exe_path,"test.pst"),cwd=ws)
+    with open(os.path.join(ws,"test.rec")) as f:
+        for line in f:
+            if "iteration       obj func" in line:
+                f.readline() # skip the initial obj func
+                lines = []
+                for _ in range(pst.control_data.noptmax):
+                    lines.append(f.readline())
+
+    ext_obj_funcs = np.array([float(line.strip().split()[-1]) for line in lines])
+    print(obj_funcs)
+    print(ext_obj_funcs) 
+
+    assert np.abs(ext_obj_funcs - obj_funcs).max() < 1e-6
+
+    ws = os.path.join(worker_d,"ext_objfunc_master2")
+    if os.path.exists(ws):
+        shutil.rmtree(ws)
+    shutil.copytree(os.path.join(worker_d,"template"),ws)
+    pst.pestpp_options.pop("base_jacobian",None)
+    par = pst.parameter_data
+    dv_pars = par.loc[par.pargp=="q","parnme"]
+    with open(os.path.join(ws,"ext_OBJ_func.csv"),'w') as f:
+        for dv_par in dv_pars:
+            f.write("{0},3.0\n".format(dv_par))
+    pst.pestpp_options["opt_objective_function"] = "ext_OBJ_func.csv"
+    pst.control_data.noptmax = 3
+    pst.write(os.path.join(ws,"test.pst"))
+    #pyemu.os_utils.start_workers(os.path.join(worker_d, "template"), exe_path, "test.pst",
+    #                            master_dir=os.path.join(worker_d, "master3"), worker_root=worker_d, num_workers=10,
+    #                            verbose=True,port=4200)
+    pyemu.os_utils.run("{0} {1}".format(exe_path,"test.pst"),cwd=ws)
+    with open(os.path.join(ws,"test.rec")) as f:
+        for line in f:
+            if "iteration       obj func" in line:
+                f.readline() # skip the initial obj func
+                lines = []
+                for _ in range(pst.control_data.noptmax):
+                    lines.append(f.readline())
+
+    ext_obj_funcs = np.array([float(line.strip().split()[-1]) for line in lines]) / 3.0
+    print(obj_funcs)
+    print(ext_obj_funcs) 
+
+    assert np.abs(ext_obj_funcs - obj_funcs).max() < 1e-2
+
 
     ws = os.path.join(worker_d,"tied_serial_master")
     if os.path.exists(ws):
@@ -284,6 +347,8 @@ def run_dewater_test():
     print(averse_obj_funcs) 
     assert len(averse_obj_funcs) > 2
     assert np.abs(averse_obj_funcs.max() - averse_obj_funcs.min()) < 0.1 
+
+
 
 
 
