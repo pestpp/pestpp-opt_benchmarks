@@ -215,7 +215,7 @@ def run_dewater_test():
         shutil.rmtree(ws)
     shutil.copytree(os.path.join(worker_d,"template"),ws)
 
-
+    pst.pestpp_options.pop("opt_objective_function")
     pst.pestpp_options["opt_risk"] = 0.95
     pst.pestpp_options.pop("base_jacobian",None)
     par = pst.parameter_data
