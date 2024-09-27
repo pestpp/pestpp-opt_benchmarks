@@ -464,6 +464,7 @@ def stack_test():
     pyemu.os_utils.run("{0} {1}".format(exe_path, "test.pst"), cwd=d)
     rec2 = os.path.join(d,"test.rec")
     assert os.path.exists(rec2)
+
     par_stack = "test.0.par_stack.csv"
     assert os.path.exists(os.path.join(d,par_stack))
     obs_stack = "test.1.obs_stack.csv"
@@ -477,42 +478,74 @@ def stack_test():
     if os.path.exists(d):
         shutil.rmtree(d)
     shutil.copytree(os.path.join("opt_dewater_chance", "template"), d)
+    
     pst.write(os.path.join(d,"test.pst"))
     pyemu.os_utils.run("{0} {1}".format(exe_path, "test.pst"), cwd=d)   
     rec3 = os.path.join(d,"test.rec")
     assert os.path.exists(rec3)
+    
 
+    d = d + "_calcresp"
+    if os.path.exists(d):
+        shutil.rmtree(d)
+    shutil.copytree(os.path.join("opt_dewater_chance", "template"), d)
+    pst.pestpp_options.pop("base_jacobian")
+    pst.write(os.path.join(d,"test.pst"))
+    pyemu.os_utils.run("{0} {1}".format(exe_path, "test.pst"), cwd=d)   
+    rec4 = os.path.join(d,"test.rec")
+    assert os.path.exists(rec4)
+    
     def get_obj(rec_file):
         tag = "---  objective function sequence  ---"
         with open(rec_file,'r') as f:
+            
             for line in f:
                 if tag in line:
                     for _ in range(3):
                         line = f.readline()
+                    obj_vals = []
+                    while True:
                     #print(line)
-                    obj = float(line.strip().split()[-1])
-                    print(obj)
-                    return obj
+                        obj = float(line.strip().split()[-1])
+                        print(obj)
+                        obj_vals.append(obj)
+                        line = f.readline()
+                        if "---" in line:
+                            break
+                    return np.array(obj_vals)
+        raise Exception("couldnt find obj value in rec file "+rec_file)
 
     obj1 = get_obj(rec1)
     obj2 = get_obj(rec2)
     obj3 = get_obj(rec3)
+    obj4 = get_obj(rec4)
+
     assert np.abs(obj1 - obj2) < 1.0e-1
     assert np.abs(obj2 - obj3) < 1.0e-1
+    assert np.abs(obj2 - obj4) < 1.0e-1
 
     d = os.path.join("opt_dewater_chance","stack_iter_test")
     if os.path.exists(d):
         shutil.rmtree(d)
+    shutil.copytree(os.path.join("opt_dewater_chance", "template"), d)
     pst.control_data.noptmax = 5
     pst.pestpp_options["opt_recalc_chance_every"] = 1
-    pst.pestpp_options["opt_stack_size"] = 30
+    pst.pestpp_options["opt_stack_size"] = 10
     pst.pestpp_options.pop("opt_par_stack")
     pst.pestpp_options.pop("opt_obs_stack")
-    
-    pst.write(os.path.join("opt_dewater_chance","template","test.pst"))
-    pyemu.os_utils.start_workers(os.path.join("opt_dewater_chance", "template"), exe_path, "test.pst",
-                                master_dir=d, worker_root="opt_dewater_chance", num_workers=10,
-                                verbose=True,port=4200)
+    pst.write(os.path.join(d,"test.pst"))
+    pyemu.os_utils.run("{0} {1}".format(exe_path, "test.pst"), cwd=d)   
+    rec5 = os.path.join(d,"test.rec")
+    assert os.path.exists(rec5)
+    obj5 = get_obj(rec5)
+    #print(obj5)
+    #print(obj1)
+    assert np.abs(obj1 - obj5[0]) < 1.0e-1
+    assert len(obj5) == pst.control_data.noptmax
+    # pst.write(os.path.join("opt_dewater_chance","template","test.pst"))
+    # pyemu.os_utils.start_workers(os.path.join("opt_dewater_chance", "template"), exe_path, "test.pst",
+    #                             master_dir=d, worker_root="opt_dewater_chance", num_workers=10,
+    #                             verbose=True,port=4200)
 
 
 def dewater_restart_test():
@@ -595,10 +628,10 @@ def fosm_invest():
 if __name__ == "__main__":
     #fosm_invest()
     #startworker()
-    run_dewater_test()
+    #run_dewater_test()
     #run_supply2_test()
     #est_res_test()
     #shutil.copy2(os.path.join("..","exe","windows","x64","Debug","pestpp-opt.exe"),os.path.join("..","bin","win","pestpp-opt.exe"))
-    #stack_test()
+    stack_test()
     #dewater_restart_test()
     #std_weights_test()
